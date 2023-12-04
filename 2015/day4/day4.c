@@ -3,27 +3,20 @@
 #include <string.h>
 #include <stdint.h>
  
-// leftrotate function definition
 #define LEFTROTATE(x, c) (((x) << (c)) | ((x) >> (32 - (c))))
  
-// These vars will contain the hash
 uint32_t h0, h1, h2, h3;
  
 void md5(uint8_t *initial_msg, size_t initial_len) {
- 
-    // Message (to prepare)
+
     uint8_t *msg = NULL;
- 
-    // Note: All variables are unsigned 32 bit and wrap modulo 2^32 when calculating
- 
-    // r specifies the per-round shift amounts
+
  
     uint32_t r[] = {7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
                     5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20,
                     4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
                     6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21};
 
-    // Use binary integer part of the sines of integers (in radians) as constants// Initialize variables:
     uint32_t k[] = {
         0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
         0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
@@ -47,69 +40,29 @@ void md5(uint8_t *initial_msg, size_t initial_len) {
     h2 = 0x98badcfe;
     h3 = 0x10325476;
  
-    // Pre-processing: adding a single 1 bit
-    //append "1" bit to message    
-    /* Notice: the input bytes are considered as bits strings,
-       where the first bit is the most significant bit of the byte.[37] */
- 
-    // Pre-processing: padding with zeros
-    //append "0" bit until message length in bit ≡ 448 (mod 512)
-    //append length mod (2 pow 64) to message
- 
     int new_len = ((((initial_len + 8) / 64) + 1) * 64) - 8;
  
-    msg = calloc(new_len + 64, 1); // also appends "0" bits 
-                                   // (we alloc also 64 extra bytes...)
+    msg = calloc(new_len + 64, 1); 
+ 
     memcpy(msg, initial_msg, initial_len);
-    msg[initial_len] = 128; // write the "1" bit
+    msg[initial_len] = 128; 
  
-    uint32_t bits_len = 8*initial_len; // note, we append the len
-    memcpy(msg + new_len, &bits_len, 4);           // in bits at the end of the buffer
+    uint32_t bits_len = 8*initial_len;
+    memcpy(msg + new_len, &bits_len, 4);   
  
-    // Process the message in successive 512-bit chunks:
-    //for each 512-bit chunk of message:
+
     int offset;
     for(offset=0; offset<new_len; offset += (512/8)) {
- 
-        // break chunk into sixteen 32-bit words w[j], 0 ≤ j ≤ 15
         uint32_t *w = (uint32_t *) (msg + offset);
  
-#ifdef DEBUG
-        printf("offset: %d %x\n", offset, offset);
- 
-        int j;
-        for(j =0; j < 64; j++) printf("%x ", ((uint8_t *) w)[j]);
-        puts("");
-#endif
- 
-        // Initialize hash value for this chunk:
+
         uint32_t a = h0;
         uint32_t b = h1;
         uint32_t c = h2;
         uint32_t d = h3;
- 
-        // Main loop:
+
         uint32_t i;
-        for(i = 0; i<64; i++) {
-
-#ifdef ROUNDS
-            uint8_t *p;
-            printf("%i: ", i);
-            p=(uint8_t *)&a;
-            printf("%2.2x%2.2x%2.2x%2.2x ", p[0], p[1], p[2], p[3], a);
-         
-            p=(uint8_t *)&b;
-            printf("%2.2x%2.2x%2.2x%2.2x ", p[0], p[1], p[2], p[3], b);
-         
-            p=(uint8_t *)&c;
-            printf("%2.2x%2.2x%2.2x%2.2x ", p[0], p[1], p[2], p[3], c);
-         
-            p=(uint8_t *)&d;
-            printf("%2.2x%2.2x%2.2x%2.2x", p[0], p[1], p[2], p[3], d);
-            puts("");
-#endif        
-
- 
+        for(i = 0; i<64; i++) { 
             uint32_t f, g;
  
              if (i < 16) {
@@ -125,31 +78,22 @@ void md5(uint8_t *initial_msg, size_t initial_len) {
                 f = c ^ (b | (~d));
                 g = (7*i) % 16;
             }
-
-#ifdef ROUNDS
-            printf("f=%x g=%d w[g]=%x\n", f, g, w[g]);
-#endif 
             uint32_t temp = d;
             d = c;
             c = b;
-            //printf("rotateLeft(%x + %x + %x + %x, %d)\n", a, f, k[i], w[g], r[i]);
             b = b + LEFTROTATE((a + f + k[i] + w[g]), r[i]);
             a = temp;
 
 
  
         }
- 
-        // Add this chunk's hash to result so far:
- 
         h0 += a;
         h1 += b;
         h2 += c;
         h3 += d;
  
     }
- 
-    // cleanup
+
     free(msg);
  
 }
@@ -169,7 +113,6 @@ char *concat(char*s1, char *s2) {
 }
 
 char* itoa(int value, char* str, int base) {
-    // Handle 0 explicitly, otherwise empty string is printed
     if (value == 0) {
         str[0] = '0';
         str[1] = '\0';
@@ -177,29 +120,24 @@ char* itoa(int value, char* str, int base) {
     }
 
     int i = 0;
-    int is_negative = 0;
 
-    // Handle negative numbers
     if (value < 0 && base == 10) {
         is_negative = 1;
         value = -value;
     }
 
-    // Process individual digits
     while (value != 0) {
         int rem = value % base;
         str[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
         value = value / base;
     }
 
-    // If the number is negative, add '-' sign
     if (is_negative) {
         str[i++] = '-';
     }
 
-    str[i] = '\0'; // Append string terminator
+    str[i] = '\0'; 
 
-    // Reverse the string
     int start = 0;
     int end = i - 1;
     while (start < end) {
