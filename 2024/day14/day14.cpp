@@ -58,16 +58,9 @@ int main() {
   ino64_t result = 1;
   for (int i = 0; i < 4; i++) {
     result = result * acc[i];
-  }
-  std::cout << "The security factor is " << result << std::endl;
-
-    std::vector<std::string> map;
-    for (int j = 0; j < 103; ++j) {
-      map.emplace_back(101,'.');
-    }
     for (Robot robot : robots) {
-      int64_t end_position_x = (robot.starting_position.first + 6620 * robot.velocity.first) % 101;
-      int64_t end_position_y = (robot.starting_position.second + 6620 * robot.velocity.second) % 103;
+      int end_position_x = (robot.starting_position.first + 100 * robot.velocity.first) % 101;
+      int end_position_y = (robot.starting_position.second + 100 * robot.velocity.second) % 103;
 
       if (end_position_x < 0) {
         end_position_x += 101;
@@ -76,12 +69,49 @@ int main() {
         end_position_y += 103;
       }
 
-      map[end_position_y][end_position_x] = '#';
+      if (end_position_x < 101 /2 && end_position_y < 103 / 2) {
+        acc[0]++;
+      } else if (end_position_x > 101 / 2 && end_position_y > 103 / 2) {
+        acc[2]++;
+      } else if (end_position_x < 101 / 2 && end_position_y > 103 / 2) {
+        acc[1]++;
+      } else if (end_position_x > 101 / 2 && end_position_y < 103 / 2) {
+        acc[3]++;
+      }
     }
-    std::cout << "Map at time " << 6620 <<std::endl;
-    for (int j = 0; j < 103; j++) {
-      std::cout << map[j] << std::endl;
-    }
+  }
+  std::cout << "The security factor is " << result << std::endl;
 
-  return 0;
+  int res = 0;
+  while (true) {
+    res++;
+    std::array<int, 4> q =  {0,0,0,0};
+    for (Robot robot : robots) {
+      int end_position_x = (robot.starting_position.first + res * robot.velocity.first) % 101;
+      int end_position_y = (robot.starting_position.second + res * robot.velocity.second) % 103;
+
+      if (end_position_x < 0) {
+        end_position_x += 101;
+      }
+      if (end_position_y < 0) {
+        end_position_y += 103;
+      }
+
+      if (end_position_x < 101 /2 && end_position_y < 103 / 2) {
+        q[0]++;
+      } else if (end_position_x > 101 / 2 && end_position_y > 103 / 2) {
+        q[2]++;
+      } else if (end_position_x < 101 / 2 && end_position_y > 103 / 2) {
+        q[1]++;
+      } else if (end_position_x > 101 / 2 && end_position_y < 103 / 2) {
+        q[3]++;
+      }
+    }
+    for (int x : q) {
+      if (x > robots.size() /2) {
+        std::cout << res << std::endl;
+        return 0;
+      }
+    }
+  }
 }
